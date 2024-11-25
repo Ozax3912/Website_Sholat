@@ -1,0 +1,427 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            Sholat.id
+        </title>
+    </head>
+    <style>
+body {
+    background-color: chocolate;
+}
+    h1{
+        text-align: center;
+    }
+    h3{
+        text-align: center;
+    }
+    h4{
+        text-align: center;
+    }
+    .tengah {
+        text-align: center;
+    }
+    </style>
+    <body>
+<h1>
+    JADWAL SHOLAT
+</h1>
+<h3>   
+    Al_Hisab : Fatkhu Rozaq
+</h3> 
+</head>
+<body onload="setInterval(displayTime, 1000);">
+
+  <ul class="list-group tengah">
+    <li class="list-group-item">
+      Sekarang Jam
+      <span id="jam">14</span>
+    </li>
+  </ul>
+<style>
+    /* Menyembunyikan elemen input */
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+<body>
+    <h4>
+        <label>
+            <input value="2" type="number" class="hidden"> 
+            <input value="2" type="number" class="hidden"> 
+            <input value="2024" type="number" class="hidden">
+        </label>
+    </h4>
+<h4>
+    <label>
+        <input value="Surabaya" type="text" id="namakota" class="hidden">
+        <input type="number" id="lok1" step="any" class="hidden"> 
+        <input type="number" id="lok2" step="any" class="hidden">
+    </label>
+</h4>  
+<h4>
+    <label>
+        <input type="number" id="lok3" step="any" class="hidden"> 
+        <input value="" type="number" id="lok4" class="hidden">
+        <!-- <input value="7" name="gmt" type="number" id="lok4" readonly class="hidden"> -->
+    </label>
+</h4>
+<h4 id="gmt-difference">Menghitung selisih waktu...</h4>
+<h4 id="output-altitude">Tinggi Tempat: Sedang dihitung...</h4>
+<body>
+    <p id="output">Mengambil lokasi...</p>
+    <script>
+        let lat = null;
+        let lang = null;
+        let alt = null;
+        let tmz = null;
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            const output = document.getElementById("output");
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+
+                        lat = latitude;
+                        lang = longitude;
+                        // Menampilkan lokasi
+                        innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
+                    },
+                    (error) => {
+                        // Menangani kesalahan
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                output.innerHTML = "Izin lokasi ditolak.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                output.innerHTML = "Informasi lokasi tidak tersedia.";
+                                break;
+                            case error.TIMEOUT:
+                                output.innerHTML = "Permintaan lokasi melebihi waktu tunggu.";
+                                break;
+                            default:
+                                output.innerHTML = "Terjadi kesalahan.";
+                        }
+                    }
+                );
+            } else {
+                output.innerHTML = "Geolocation tidak didukung oleh browser Anda.";
+            }
+        }
+
+        // Memanggil fungsi getLocation ketika halaman selesai dimuat
+        document.addEventListener("DOMContentLoaded", getLocation);
+
+        function displayTime(){
+      var clientTime=new Date();
+      var time=new Date(clientTime.getTime());
+      var sh=time.getHours().toString();
+      var sm=time.getMinutes().toString();
+      var ss=time.getSeconds().toString();
+    document.getElementById("jam").innerHTML=(sh.length==1?"0"+sh:sh)+":"+(sm.length==1?"0"+sm:sm)+":"+(ss.length==1?"0"+ss:ss);
+}
+
+        // Fungsi untuk mendapatkan offset GMT
+        function getGMTOffset() {
+                const offsetInMinutes = new Date().getTimezoneOffset();
+                const gmtOffset = -(offsetInMinutes / 60);
+                return gmtOffset;
+            }
+
+            // Fungsi untuk menampilkan selisih GMT
+            function displayGMTDifference() {
+                const localGMTOffset = getGMTOffset();
+                const gmtElement = document.getElementById("gmt-difference");
+                gmtElement.innerHTML = `Selisih Waktu Lokal dengan GMT: GMT${localGMTOffset >= 0 ? "+" : ""}${localGMTOffset}`;
+                tmz=localGMTOffset;
+                // Mengisi nilai zona waktu ke input "lok4"
+            document.getElementById("lok4").value = localGMTOffset;
+            }
+
+            // Memanggil fungsi ketika halaman selesai dimuat
+            document.addEventListener("DOMContentLoaded", () => {
+                getLocation();
+                displayGMTDifference();
+            });
+            // Fungsi untuk mendapatkan tinggi tempat (altitude)
+function getAltitude(latitude, longitude) {
+    const apiUrl = `https://api.open-elevation.com/api/v1/lookup?locations=${latitude},${longitude}`;
+
+    fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+            if (data && data.results && data.results.length > 0) {
+                const altitude = data.results[0].elevation; // Mendapatkan ketinggian
+                alt=altitude;
+                document.getElementById("output-altitude").innerHTML = `Tinggi Tempat: ${altitude} meter`;
+            } else {
+                document.getElementById("output-altitude").innerHTML = "Data ketinggian tidak tersedia.";
+            }
+        })
+        .catch((error) => {
+            console.error("Gagal mengambil data elevasi:", error);
+            document.getElementById("output-altitude").innerHTML = "Gagal mengambil data elevasi.";
+        });
+}
+
+// Modifikasi fungsi getLocation untuk memanggil getAltitude
+function getLocation() {
+    const output = document.getElementById("output");
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+
+                lat = latitude;
+                lang = longitude;
+
+                // Menampilkan lokasi
+                output.innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
+
+                // Memperbarui input latitude dan longitude di form
+                document.getElementById("lok1").value = latitude;
+                    document.getElementById("lok2").value = longitude;
+                // Panggil fungsi untuk mendapatkan altitude
+                getAltitude(latitude, longitude);
+            },
+            (error) => {
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        output.innerHTML = "Izin lokasi ditolak.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        output.innerHTML = "Informasi lokasi tidak tersedia.";
+                        break;
+                    case error.TIMEOUT:
+                        output.innerHTML = "Permintaan lokasi melebihi waktu tunggu.";
+                        break;
+                    default:
+                        output.innerHTML = "Terjadi kesalahan.";
+                }
+            }
+        );
+    } else {
+        output.innerHTML = "Geolocation tidak didukung oleh browser Anda.";
+    }
+}
+    </script>
+</body>
+
+<h3>
+    <!-- <button onclick="BtHitung()"><b> LIHAT</button> -->
+    <!-- <button onclick="BtHapus()"><b> HAPUS</button> -->
+</h3>
+<h4>
+    <p><span id="hasil0"></span></p>
+    <p><span id="hasil1"></span></p>
+</h4>  
+    </body>
+    <script>
+function BtHapus(){
+    hasil0.innerHTML="Data Terhapus";
+    hasil1.innerHTML="<i>Data Terhapus</i>";
+}
+function BtHitung(){
+    var tbt,mm,TanggalM,BulanM,TahunM,jd1,kota,lt,bt,tt,tz;
+    kota=document.getElementById("namakota").value;
+    lt=document.getElementById("lok1").value;
+    bt=document.getElementById("lok2").value;
+    tt=document.getElementById("lok3").value;
+    tz=document.getElementById("lok4").value;
+    tt=tt*1;
+    tz=tz*1;
+    NamaBulan=["Desember","Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktobber","November","Desember"]
+    tbt=new Date();
+    TanggalM=tbt.getDate();
+    mm=tbt.getMonth();BulanM=mm+1;
+    TahunM=tbt.getFullYear();
+    jd1=KMJD(TanggalM,BulanM,TahunM,12,tz);
+    var HP,hr,ps,NamaHari,NamaPasaran,Hari,Pasaran;
+    HP=INT(jd1+17);
+    hr=MOD(HP,7);
+    ps=MOD(HP,5);
+    NamaHari=["Sabtu","Ahad","Senin","Selasa","Rabu","Kamis","Jumat"];
+    NamaPasaran=["Kliwon","legi","Pahing","Pon","Wage"];
+    Hari=NamaHari[hr];
+    Pasaran=NamaPasaran[ps];
+    var BA1,BA2,BA3,BA4,BA5,BA6,BA7,BA8,BA9,BA10,BA11,BA12,dek,e,let;
+    BA1=(jd1-2451545)/36525;
+    BA2=FRAC(280.46645+36000.76983*BA1,360);
+    BA3=FRAC(357.52910+35999.05030*BA1,360);
+    BA4=FRAC(125.04-1934.136*BA1,360);
+    BA5=(17.264/3600)*SIN(BA4)+(0.206/3600)*SIN(2*BA4);
+    BA6=(-1.264/3600)*SIN(2*BA2);
+    BA7=(9.23/3600)*COS(BA4)-(0.090/3600)*COS(2*BA4);
+    BA8=(0.548/3600)*COS(2*BA2);
+    BA9=23.43929111+BA7+BA8-(46.8150/3600)*BA1;
+    BA10=(6898.06/3600)*SIN(BA3)+(72.095/3600)*SIN(2*BA3)+(0.966/3600)*SIN(3*BA3);
+    BA11=BA2+BA10+BA5+BA6-(20.47/3600);
+    dek=ASIN(SIN(BA11)*SIN(BA9));
+    e=(-1.915*SIN(BA3)+-0.02*SIN(2*BA3)+2.466*SIN(2*BA11)+-0.053*SIN(4*BA11))/15;
+    var SH1,DZ,hA,F,G,ASH,Dip,hMag,Maghrib,Isya,Imsyak,Shubuh,Terbit,Dluha,iht1,iht2,iht3;
+    DZ=12-e+((tz*15)-bt)/15;
+    SH1=Math.abs(lt-dek);
+    hA=ATAN(1/(TAN(SH1)+1));
+    F=-TAN(lt)*TAN(dek);
+    G=COS(lt)*COS(dek);
+    ASH=DZ+ACOS(F+SIN(hA)/G)/15;
+    Sd=0.267/(1-0.017*COS(BA3));
+    Dip=(1.76/60)*Math.sqrt(tt);
+    hMag=0-(Sd+(34.5/60)+Dip)-0.0024;
+    Maghrib=DZ+ACOS(F+SIN(hMag)/G)/15;
+    iht1=10/60;
+    iht2=3.5/60;
+    iht3=2/60;
+    Isya=DZ+ACOS(F+SIN(-18)/G)/15;
+    Imsyak=DZ-ACOS(F+SIN(-20)/G)/15-iht1;
+    Shubuh=DZ-ACOS(F+SIN(-20)/G)/15;
+    Terbit=DZ-ACOS(F+SIN(hMag)/G)/15;
+    Dluha=DZ-ACOS(F+SIN(4.5)/G)/15;
+    
+
+    hasil0.innerHTML="Jadwal Sholat Kota <br>"
+    +"Hari = "+Hari+" "+Pasaran+", "+TanggalM+" "+NamaBulan[BulanM]+" "+TahunM+" M"+"<br>"
+    + "Dzuhur = "+Hms2(DZ+iht2)+"<br>"
+    + "Ashar = "+Hms2(ASH+iht3)+"<br>"
+    + "Maghrib = "+Hms2(Maghrib+iht3)+"<br>"
+    + "Isya = "+Hms2(Isya+iht3)+"<br>"
+    + "Imsyak = "+Hms2(Imsyak+iht3)+"<br>"
+    + "Shubuh = "+Hms2(Shubuh+iht3)+"<br>"
+    + "Thulu' = "+Hms2(Terbit-iht3)+"<br>"
+    + "Dluha = "+Hms2(Dluha+iht3)+"<br>";
+    // + "1/2 malam = "+Hms2(Maghrib)+"<br>";
+    // hasil1.innerHTML= "Julian Day = "+jd1+"<br>"
+    // + "Deklinasi M = "+Dms2(dek)+"<br>"
+    // + "Perata Waktu = "+Hms2(e)+"<br>"
+    // + "SemiDiameter = "+Hms2(Sd)+"<br>";
+}
+function KMJD(tgl,bln,thn,jam,tz){
+    var ab1,ab2,ab3,ab4,ab5;
+    ab1=tgl+((jam-tz)/24);
+    if (bln<3){ab2=bln+12;ab3=thn-1;} else {ab2=bln;ab3=thn;}
+    if (thn+bln/100+tgl/10000>=1582.1015){ab4=2-INT(thn/100)+INT(INT(thn/100)/4);} else {ab4=0;}
+    ab5=INT(365.25*(ab3+4716))+INT(30.6001*(ab2+1))+ab1+ab4-1524.5;
+    return ab5;
+}
+function INT(data){
+    return Math.floor(data);
+}
+function MOD (Data,Data1){
+    return Data-Data1*Math.floor(Data/Data1);
+}
+function FRAC (Data,Data1){
+    return Data-Math.floor(Data/Data1)*Data1;
+}
+function ROUND (Data,Data1){
+    var A,B,C,D,E,h1;
+    h1=Math.pow(10,Data1);
+    A=INT(Data);
+    B=(Data-A)*h1;
+    C=INT(B);
+    D=B-C;
+    if(D>0.5){E=1;}
+    else {E=0;}
+    return A+(C+E)/h1;
+}
+function Rad (Deg){
+    return Deg*(Math.atan(1)/45);
+}
+function Deg (Rad){
+    return Rad*(45/Math.atan(1));
+}
+function TAN (Data){
+    return Math.tan(Rad(Data));
+}
+function COS (Data){
+    return Math.cos(Rad(Data));
+}
+function SIN (Data){
+    return Math.sin(Rad(Data));
+}
+function ASIN (Data){
+    return Deg(Math.asin(Data));
+}
+function ACOS (Data){
+    return Deg(Math.acos(Data));
+}
+function ATAN (Data){
+    return Deg(Math.atan(Data));
+}
+function Dms(Data2){
+    var Data,Dtk,Mnt,Drj;
+    Data=Math.abs(Data2);
+    const deg=Math.floor(Data);
+    const min=Math.floor((Data-deg)*60);
+    const sec=((Data-deg-min/60)*3600).toFixed(0);
+    if(sec<60){Dtk=sec;Mnt=min;}
+    else {Dtk=0;Mnt=min+1;}
+    if(Mnt<60){Mnt=Mnt;Drj=deg;}
+    else {Mnt=0;Drj=deg+1;}
+
+    var tanda,tamdaD,tandaM,tandaS;
+    if(Data2<0){tanda="-"}
+    else {tanda="+"}
+    if (Drj<10){tandaD="0"}
+    else {tandaD=""}
+    if (Mnt<10){tandaM="0"}
+    else {tandaM=""}
+    if (Dtk<10){tandaS="0"}
+    else {tandaS=""}
+    return tanda+tandaD+Drj+"°"+tandaM+Mnt+"'"+tandaS+Dtk+"''";
+}
+function Dms2(Data2){
+    var Data,Dtk,Mnt,Drj;
+    Data=Math.abs(Data2);
+    const deg=Math.floor(Data);
+    const min=Math.floor((Data-deg)*60);
+    const sec=((Data-deg-min/60)*3600).toFixed(2);
+    if(sec<60){Dtk=sec;Mnt=min;}
+    else {Dtk=0;Mnt=min+1;}
+    if(Mnt<60){Mnt=Mnt;Drj=deg;}
+    else {Mnt=0;Drj=deg+1;}
+
+    var tanda,tandaD,tandaM,tandaS;
+    if(Data2<0){tanda="-"}
+    else {tanda="+"}
+    if (Drj<10){tandaD="0"}
+    else {tandaD=""}
+    if (Mnt<10){tandaM="0"}
+    else {tandaM=""}
+    if (Dtk<10){tandaS="0"}
+    else {tandaS=""}
+    return tanda+tandaD+Drj+"°"+tandaM+Mnt+"'"+tandaS+Dtk+"''";
+}
+function Hms2(Data2){
+    var Data,Dtk,Mnt,Drj;
+    Data=Math.abs(Data2);
+    const deg=Math.floor(Data);
+    const min=Math.floor((Data-deg)*60);
+    const sec=((Data-deg-min/60)*3600).toFixed(0);
+
+    if(sec<60){Dtk=sec;Mnt=min;}
+    else {Dtk=0;Mnt=min+1;}
+    if(Mnt<60){Mnt=Mnt;Drj=deg;}
+    else {Mnt=0;Drj=deg+1;}
+
+    var  tanda,tandaD,tandaM,tandaS;
+    if(Data2<0){tanda=""}
+    else {tanda=""}
+    if (Drj<10){tandaD="0"}
+    else {tandaD=""}
+    if (Mnt<10){tandaM="0"}
+    else {tandaM=""}
+    if (Dtk<10){tandaS="0"}
+    else {tandaS=""}
+    return tanda+tandaD+Drj+":"+tandaM+Mnt+":"+tandaS+Dtk+"";
+}
+
+window.onload(BtHitung())
+    </script>
+</html>
